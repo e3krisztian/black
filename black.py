@@ -3319,6 +3319,7 @@ def can_omit_invisible_parens(line: Line, line_length: int) -> bool:
     the point is to not return false positives that end up producing lines that
     are too long.
     """
+    return False
     bt = line.bracket_tracker
     if not bt.delimiters:
         # Without delimiters the optional parentheses are useless.
