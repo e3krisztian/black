@@ -161,8 +161,10 @@ class BlackTestCase(unittest.TestCase):
     def test_piping(self) -> None:
         source, expected = read_data("../black", data=False)
         stderrbuf = BytesIO()
-        result = BlackRunner(stderrbuf).invoke(
-            black.main, ["-", "--fast", f"--line-length={ll}"], input=source
+        result = (
+            BlackRunner(stderrbuf).invoke(
+                black.main, ["-", "--fast", f"--line-length={ll}"], input=source
+            )
         )
         self.assertEqual(result.exit_code, 0)
         self.assertFormatEqual(expected, result.output)
@@ -170,9 +172,11 @@ class BlackTestCase(unittest.TestCase):
         black.assert_stable(source, result.output, line_length=ll)
 
     def test_piping_diff(self) -> None:
-        diff_header = re.compile(
-            rf"(STDIN|STDOUT)\t\d\d\d\d-\d\d-\d\d "
-            rf"\d\d:\d\d:\d\d\.\d\d\d\d\d\d \+\d\d\d\d"
+        diff_header = (
+            re.compile(
+                rf"(STDIN|STDOUT)\t\d\d\d\d-\d\d-\d\d "
+                rf"\d\d:\d\d:\d\d\.\d\d\d\d\d\d \+\d\d\d\d"
+            )
         )
         source, _ = read_data("expression.py")
         expected, _ = read_data("expression.diff")
@@ -236,14 +240,16 @@ class BlackTestCase(unittest.TestCase):
         source, _ = read_data("expression.py")
         expected, _ = read_data("expression.diff")
         tmp_file = Path(black.dump_to_file(source))
-        diff_header = re.compile(
-            rf"{re.escape(str(tmp_file))}\t\d\d\d\d-\d\d-\d\d "
-            rf"\d\d:\d\d:\d\d\.\d\d\d\d\d\d \+\d\d\d\d"
+        diff_header = (
+            re.compile(
+                rf"{re.escape(str(tmp_file))}\t\d\d\d\d-\d\d-\d\d "
+                rf"\d\d:\d\d:\d\d\.\d\d\d\d\d\d \+\d\d\d\d"
+            )
         )
         stderrbuf = BytesIO()
         try:
-            result = BlackRunner(stderrbuf).invoke(
-                black.main, ["--diff", str(tmp_file)]
+            result = (
+                BlackRunner(stderrbuf).invoke(black.main, ["--diff", str(tmp_file)])
             )
             self.assertEqual(result.exit_code, 0)
         finally:
@@ -715,8 +721,10 @@ class BlackTestCase(unittest.TestCase):
         self.assertEqual({"multiple", "imports"}, black.get_future_imports(node))
         node = black.lib2to3_parse("from __future__ import (parenthesized, imports)\n")
         self.assertEqual({"parenthesized", "imports"}, black.get_future_imports(node))
-        node = black.lib2to3_parse(
-            "from __future__ import multiple\nfrom __future__ import imports\n"
+        node = (
+            black.lib2to3_parse(
+                "from __future__ import multiple\nfrom __future__ import imports\n"
+            )
         )
         self.assertEqual({"multiple", "imports"}, black.get_future_imports(node))
         node = black.lib2to3_parse("# comment\nfrom __future__ import black\n")
@@ -891,8 +899,8 @@ class BlackTestCase(unittest.TestCase):
             cached.touch()
             cached_but_changed.touch()
             cache = {cached: black.get_cache_info(cached), cached_but_changed: (0.0, 0)}
-            todo, done = black.filter_cached(
-                cache, {uncached, cached, cached_but_changed}
+            todo, done = (
+                black.filter_cached(cache, {uncached, cached, cached_but_changed})
             )
             self.assertEqual(todo, {uncached, cached_but_changed})
             self.assertEqual(done, {cached})
@@ -942,8 +950,10 @@ class BlackTestCase(unittest.TestCase):
             self.assertEqual(result.exit_code, 0, result.output)
 
             # Multi file command.
-            result = CliRunner().invoke(
-                black.main, [str(src1), str(src2), "--diff", "--check"]
+            result = (
+                CliRunner().invoke(
+                    black.main, [str(src1), str(src2), "--diff", "--check"]
+                )
             )
             self.assertEqual(result.exit_code, 1, result.output)
 
@@ -1058,8 +1068,8 @@ class BlackTestCase(unittest.TestCase):
             for path in paths:
                 with open(path, "w") as fh:
                     fh.write(source)
-            result = CliRunner().invoke(
-                black.main, [str(p) for p in paths] + ["--py36"]
+            result = (
+                CliRunner().invoke(black.main, [str(p) for p in paths] + ["--py36"])
             )
             self.assertEqual(result.exit_code, 0)
             for path in paths:

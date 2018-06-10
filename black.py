@@ -322,8 +322,10 @@ def main(
 ) -> None:
     """The uncompromising code formatter."""
     write_back = WriteBack.from_configuration(check=check, diff=diff)
-    mode = FileMode.from_configuration(
-        py36=py36, pyi=pyi, skip_string_normalization=skip_string_normalization
+    mode = (
+        FileMode.from_configuration(
+            py36=py36, pyi=pyi, skip_string_normalization=skip_string_normalization
+        )
     )
     if config and verbose:
         out(f"Using configuration from {config}.", bold=False, fg="blue")
@@ -407,8 +409,10 @@ def reformat_one(
     try:
         changed = Changed.NO
         if not src.is_file() and str(src) == "-":
-            if format_stdin_to_stdout(
-                line_length=line_length, fast=fast, write_back=write_back, mode=mode
+            if (
+                format_stdin_to_stdout(
+                    line_length=line_length, fast=fast, write_back=write_back, mode=mode
+                )
             ):
                 changed = Changed.YES
         else:
@@ -418,12 +422,15 @@ def reformat_one(
                 res_src = src.resolve()
                 if res_src in cache and cache[res_src] == get_cache_info(res_src):
                     changed = Changed.CACHED
-            if changed is not Changed.CACHED and format_file_in_place(
-                src,
-                line_length=line_length,
-                fast=fast,
-                write_back=write_back,
-                mode=mode,
+            if (
+                changed is not Changed.CACHED
+                and format_file_in_place(
+                    src,
+                    line_length=line_length,
+                    fast=fast,
+                    write_back=write_back,
+                    mode=mode,
+                )
             ):
                 changed = Changed.YES
             if write_back == WriteBack.YES and changed is not Changed.NO:
@@ -522,8 +529,10 @@ def format_file_in_place(
     with open(src, "rb") as buf:
         src_contents, encoding, newline = decode_bytes(buf.read())
     try:
-        dst_contents = format_file_contents(
-            src_contents, line_length=line_length, fast=fast, mode=mode
+        dst_contents = (
+            format_file_contents(
+                src_contents, line_length=line_length, fast=fast, mode=mode
+            )
         )
     except NothingChanged:
         return False
@@ -539,11 +548,13 @@ def format_file_in_place(
         if lock:
             lock.acquire()
         try:
-            f = io.TextIOWrapper(
-                sys.stdout.buffer,
-                encoding=encoding,
-                newline=newline,
-                write_through=True,
+            f = (
+                io.TextIOWrapper(
+                    sys.stdout.buffer,
+                    encoding=encoding,
+                    newline=newline,
+                    write_through=True,
+                )
             )
             f.write(diff_contents)
             f.detach()
@@ -576,8 +587,13 @@ def format_stdin_to_stdout(
         return False
 
     finally:
-        f = io.TextIOWrapper(
-            sys.stdout.buffer, encoding=encoding, newline=newline, write_through=True
+        f = (
+            io.TextIOWrapper(
+                sys.stdout.buffer,
+                encoding=encoding,
+                newline=newline,
+                write_through=True,
+            )
         )
         if write_back == WriteBack.YES:
             f.write(dst)
@@ -628,10 +644,12 @@ def format_str(
     is_pyi = bool(mode & FileMode.PYI)
     py36 = bool(mode & FileMode.PYTHON36) or is_python36(src_node)
     normalize_strings = not bool(mode & FileMode.NO_STRING_NORMALIZATION)
-    lines = LineGenerator(
-        remove_u_prefix=py36 or "unicode_literals" in future_imports,
-        is_pyi=is_pyi,
-        normalize_strings=normalize_strings,
+    lines = (
+        LineGenerator(
+            remove_u_prefix=py36 or "unicode_literals" in future_imports,
+            is_pyi=is_pyi,
+            normalize_strings=normalize_strings,
+        )
     )
     elt = EmptyLineTracker(is_pyi=is_pyi)
     empty_line = Line()
@@ -1032,8 +1050,8 @@ class Line:
         if self.leaves and not preformatted:
             # Note: at this point leaf.prefix should be empty except for
             # imports, for which we only preserve newlines.
-            leaf.prefix += whitespace(
-                leaf, complex_subscript=self.is_complex_subscript(leaf)
+            leaf.prefix += (
+                whitespace(leaf, complex_subscript=self.is_complex_subscript(leaf))
             )
         if self.inside_brackets or not preformatted:
             self.bracket_tracker.mark(leaf)
@@ -1085,9 +1103,10 @@ class Line:
     @property
     def is_stub_class(self) -> bool:
         """Is this line a class definition with a body consisting only of "..."?"""
-        return self.is_class and self.leaves[-3:] == [
-            Leaf(token.DOT, ".") for _ in range(3)
-        ]
+        return (
+            self.is_class
+            and self.leaves[-3:] == [Leaf(token.DOT, ".") for _ in range(3)]
+        )
 
     @property
     def is_def(self) -> bool:
@@ -1101,11 +1120,14 @@ class Line:
             second_leaf: Optional[Leaf] = self.leaves[1]
         except IndexError:
             second_leaf = None
-        return (first_leaf.type == token.NAME and first_leaf.value == "def") or (
-            first_leaf.type == token.ASYNC
-            and second_leaf is not None
-            and second_leaf.type == token.NAME
-            and second_leaf.value == "def"
+        return (
+            (first_leaf.type == token.NAME and first_leaf.value == "def")
+            or (
+                first_leaf.type == token.ASYNC
+                and second_leaf is not None
+                and second_leaf.type == token.NAME
+                and second_leaf.value == "def"
+            )
         )
 
     @property
@@ -1151,10 +1173,12 @@ class Line:
 
     def maybe_remove_trailing_comma(self, closing: Leaf) -> bool:
         """Remove trailing comma if there is one and it's safe."""
-        if not (
-            self.leaves
-            and self.leaves[-1].type == token.COMMA
-            and closing.type in CLOSING_BRACKETS
+        if (
+            not (
+                self.leaves
+                and self.leaves[-1].type == token.COMMA
+                and closing.type in CLOSING_BRACKETS
+            )
         ):
             return False
 
@@ -1268,8 +1292,9 @@ class Line:
 
             if subscript_start.type == syms.subscriptlist:
                 subscript_start = child_towards(subscript_start, leaf)
-        return subscript_start is not None and any(
-            n.type in TEST_DESCENDANTS for n in subscript_start.pre_order()
+        return (
+            subscript_start is not None
+            and any(n.type in TEST_DESCENDANTS for n in subscript_start.pre_order())
         )
 
     def __str__(self) -> str:
@@ -1401,8 +1426,9 @@ class EmptyLineTracker:
             if self.previous_line.is_decorator:
                 return 0, 0
 
-            if self.previous_line.depth < current_line.depth and (
-                self.previous_line.is_class or self.previous_line.is_def
+            if (
+                self.previous_line.depth < current_line.depth
+                and (self.previous_line.is_class or self.previous_line.is_def)
             ):
                 return 0, 0
 
@@ -1649,13 +1675,13 @@ class LineGenerator(Visitor[Line]):
         v = self.visit_stmt
         Ø: Set[str] = set()
         self.visit_assert_stmt = partial(v, keywords={"assert"}, parens={"assert", ","})
-        self.visit_if_stmt = partial(
-            v, keywords={"if", "else", "elif"}, parens={"if", "elif"}
+        self.visit_if_stmt = (
+            partial(v, keywords={"if", "else", "elif"}, parens={"if", "elif"})
         )
         self.visit_while_stmt = partial(v, keywords={"while", "else"}, parens={"while"})
         self.visit_for_stmt = partial(v, keywords={"for", "else"}, parens={"for", "in"})
-        self.visit_try_stmt = partial(
-            v, keywords={"try", "except", "else", "finally"}, parens=Ø
+        self.visit_try_stmt = (
+            partial(v, keywords={"try", "except", "else", "finally"}, parens=Ø)
         )
         self.visit_except_clause = partial(v, keywords={"except"}, parens=Ø)
         self.visit_with_stmt = partial(v, keywords={"with"}, parens=Ø)
@@ -1695,11 +1721,10 @@ def whitespace(leaf: Leaf, *, complex_subscript: bool) -> str:  # noqa C901
         return DOUBLESPACE
 
     assert p is not None, f"INTERNAL ERROR: hand-made leaf without parent: {leaf!r}"
-    if t == token.COLON and p.type not in {
-        syms.subscript,
-        syms.subscriptlist,
-        syms.sliceop,
-    }:
+    if (
+        t == token.COLON
+        and p.type not in {syms.subscript, syms.subscriptlist, syms.sliceop}
+    ):
         return NO
 
     prev = leaf.prev_sibling
@@ -1719,12 +1744,10 @@ def whitespace(leaf: Leaf, *, complex_subscript: bool) -> str:  # noqa C901
 
         if prevp.type == token.EQUAL:
             if prevp.parent:
-                if prevp.parent.type in {
-                    syms.arglist,
-                    syms.argument,
-                    syms.parameters,
-                    syms.varargslist,
-                }:
+                if (
+                    prevp.parent.type
+                    in {syms.arglist, syms.argument, syms.parameters, syms.varargslist}
+                ):
                     return NO
 
                 elif prevp.parent.type == syms.typedargslist:
@@ -1876,10 +1899,10 @@ def whitespace(leaf: Leaf, *, complex_subscript: bool) -> str:  # noqa C901
 
             prevp_parent = prevp.parent
             assert prevp_parent is not None
-            if prevp.type == token.COLON and prevp_parent.type in {
-                syms.subscript,
-                syms.sliceop,
-            }:
+            if (
+                prevp.type == token.COLON
+                and prevp_parent.type in {syms.subscript, syms.sliceop}
+            ):
                 return NO
 
             elif prevp.type == token.EQUAL and prevp_parent.type == syms.argument:
@@ -2131,8 +2154,9 @@ def split_line(
         return
 
     line_str = str(line).strip("\n")
-    if not line.should_explode and is_line_short_enough(
-        line, line_length=line_length, line_str=line_str
+    if (
+        not line.should_explode
+        and is_line_short_enough(line, line_length=line_length, line_str=line_str)
     ):
         yield line
         return
@@ -2297,9 +2321,11 @@ def right_hand_split(
             return
 
         except CannotSplit:
-            if not (
-                can_be_split(body)
-                or is_line_short_enough(body, line_length=line_length)
+            if (
+                not (
+                    can_be_split(body)
+                    or is_line_short_enough(body, line_length=line_length)
+                )
             ):
                 raise CannotSplit(
                     "Splitting failed, body is still too long and can't be split."
@@ -2405,8 +2431,9 @@ def delimiter_split(line: Line, py36: bool = False) -> Iterator[Line]:
             yield from append_to_line(comment_after)
 
         lowest_depth = min(lowest_depth, leaf.bracket_depth)
-        if leaf.bracket_depth == lowest_depth and is_vararg(
-            leaf, within=VARARGS_PARENTS
+        if (
+            leaf.bracket_depth == lowest_depth
+            and is_vararg(leaf, within=VARARGS_PARENTS)
         ):
             trailing_comma_safe = trailing_comma_safe and py36
         leaf_priority = bt.delimiters.get(id(leaf))
@@ -2459,11 +2486,13 @@ def is_import(leaf: Leaf) -> bool:
     p = leaf.parent
     t = leaf.type
     v = leaf.value
-    return bool(
-        t == token.NAME
-        and (
-            (v == "import" and p and p.type == syms.import_name)
-            or (v == "from" and p and p.type == syms.import_from)
+    return (
+        bool(
+            t == token.NAME
+            and (
+                (v == "import" and p and p.type == syms.import_name)
+                or (v == "from" and p and p.type == syms.import_from)
+            )
         )
     )
 
@@ -2658,10 +2687,12 @@ def is_one_tuple(node: LN) -> bool:
             return False
 
         lpar, gexp, rpar = node.children
-        if not (
-            lpar.type == token.LPAR
-            and gexp.type == syms.testlist_gexp
-            and rpar.type == token.RPAR
+        if (
+            not (
+                lpar.type == token.LPAR
+                and gexp.type == syms.testlist_gexp
+                and rpar.type == token.RPAR
+            )
         ):
             return False
 
@@ -2795,10 +2826,12 @@ def ensure_visible(leaf: Leaf) -> None:
 
 def should_explode(line: Line, opening_bracket: Leaf) -> bool:
     """Should `line` immediately be split with `delimiter_split()` after RHS?"""
-    if not (
-        opening_bracket.parent
-        and opening_bracket.parent.type in {syms.atom, syms.import_from}
-        and opening_bracket.value in "[{("
+    if (
+        not (
+            opening_bracket.parent
+            and opening_bracket.parent.type in {syms.atom, syms.import_from}
+            and opening_bracket.value in "[{("
+        )
     ):
         return False
 
@@ -3146,9 +3179,11 @@ def assert_stable(
     """Raise AssertionError if `dst` reformats differently the second time."""
     newdst = format_str(dst, line_length=line_length, mode=mode)
     if dst != newdst:
-        log = dump_to_file(
-            diff(src, dst, "source", "first pass"),
-            diff(dst, newdst, "first pass", "second pass"),
+        log = (
+            dump_to_file(
+                diff(src, dst, "source", "first pass"),
+                diff(dst, newdst, "first pass", "second pass"),
+            )
         )
         raise AssertionError(
             f"INTERNAL ERROR: Black produced different code on the second pass "
@@ -3178,8 +3213,10 @@ def diff(a: str, b: str, a_name: str, b_name: str) -> str:
 
     a_lines = [line + "\n" for line in a.split("\n")]
     b_lines = [line + "\n" for line in b.split("\n")]
-    return "".join(
-        difflib.unified_diff(a_lines, b_lines, fromfile=a_name, tofile=b_name, n=5)
+    return (
+        "".join(
+            difflib.unified_diff(a_lines, b_lines, fromfile=a_name, tofile=b_name, n=5)
+        )
     )
 
 
@@ -3246,9 +3283,11 @@ def enumerate_with_length(
 
     Stops prematurely on multiline strings and standalone comments.
     """
-    op = cast(
-        Callable[[Sequence[Leaf]], Iterator[Tuple[Index, Leaf]]],
-        enumerate_reversed if reversed else enumerate,
+    op = (
+        cast(
+            Callable[[Sequence[Leaf]], Iterator[Tuple[Index, Leaf]]],
+            enumerate_reversed if reversed else enumerate,
+        )
     )
     for index, leaf in op(line.leaves):
         length = len(leaf.prefix) + len(leaf.value)
